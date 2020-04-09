@@ -7,10 +7,11 @@ using Library.API.Models;
 
 namespace Library.API.Controllers
 {
+    //测试推送功能
     [Route("api/authors")]
     [ApiController]
     public class AuthorController : ControllerBase
-    {
+    {      
         public IAuthorRepository AuthorRepository { get; }
         public AuthorController(IAuthorRepository authorRepository)
         {
