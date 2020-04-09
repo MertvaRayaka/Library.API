@@ -28,7 +28,7 @@ namespace Library.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(config =>
-            { 
+            {  
                 config.ReturnHttpNotAcceptable = true;//只有返回Accept指定类型客户端才能正确接收，否则返回406 Not Accept
                 config.OutputFormatters.Add(new XmlSerializerOutputFormatter());//将能够输出XML的Formatter添加到Formatter集合中
             })
