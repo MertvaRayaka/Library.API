@@ -1,0 +1,34 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Library.API.Entities
+{
+    public class Author
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string Name { get; set; }
+
+        [Required]
+        public DateTimeOffset BirthDate { get; set; }
+
+        [Required]
+        [MaxLength(40)]
+        public string BirthPlace { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        //集合导航属性：意味着一个作者有若干图书实体
+        public ICollection<Book> Books { get; set; } = new List<Book>();
+
+    }
+}

@@ -12,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Library.API.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Library.API
 {
@@ -35,6 +37,10 @@ namespace Library.API
             .AddNewtonsoftJson();
             services.AddScoped<IAuthorRepository, AuthorMockRepository>();
             services.AddScoped<IBookRespository, BookMockRepository>();
+            services.AddDbContext<LibraryDbContext>(option => 
+            {
+                option.UseMySQL(Configuration.GetConnectionString("MysqlConnection"));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
