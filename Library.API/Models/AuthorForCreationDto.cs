@@ -16,5 +16,6 @@ namespace Library.API.Models
 
         [EmailAddress(ErrorMessage ="邮箱格式不正确")]
         public string Email { get; set; }
+
     }
 }
