@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Library.API.Entities;
+using Library.API.Filters;
 using Library.API.Models;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace Library.API.Controllers
 {
     [Route("api/authors/{authorId}/books")]
     [ApiController]
+    [ServiceFilter(typeof(CheckAuthorExistFilterAttribute))]
     public class BookController : ControllerBase
     {
         //public ILogger<BookController> Logger { get; }
@@ -161,33 +163,56 @@ namespace Library.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetSpecifyAuthorBooks(Guid authorid)
         {
-            var author = await RepositoryWrapper.Author.GetByIdAsync(authorid);
-            
-            if (author == null)
-            {
-                return NotFound();
-            }
-            if (author.Books.Count==0)
+            var books = await RepositoryWrapper.Book.GetBooksAsync(authorid);
+
+            if (books.Count() == 1)
             {
                 RepositoryWrapper.Book.Create(new Book
                 {
-                    Id = Guid.NewGuid(),
                     AuthorId = authorid,
-                    Description = "Neil's Book",
-                    Page = 888,
-                    Title = "真香系列"
+                    Description = "超好看的书",
+                    Id = Guid.NewGuid(),
+                    Page = 999,
+                    Title = "文章の标题"
                 });
 
-                var result = await RepositoryWrapper.Book.SaveAsync();
-                if (!result)
-                {
-                    throw new Exception("创建Book失败");
-                }
+                await RepositoryWrapper.Book.SaveAsync();
             }
 
-            var Books = await RepositoryWrapper.Book.GetByConditionAsync(p => p.AuthorId == authorid);
-            var BookDtoList = Mapper.Map<IEnumerable<BookDto>>(Books);
-            return BookDtoList.ToList();
+            var bookDtoList = Mapper.Map<IEnumerable<BookDto>>(books);
+
+            return bookDtoList.ToList();
+        }
+
+        [HttpGet("{bookid}", Name = nameof(GetBookAsync))]
+        public async Task<ActionResult<BookDto>> GetBookAsync(Guid authorid, Guid bookid)
+        {
+            var book = await RepositoryWrapper.Book.GetBookAsync(authorid, bookid);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            var bookDto = Mapper.Map<BookDto>(book);
+            return bookDto;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> AddBookAsync([FromRoute]Guid authorid, [FromBody]BookForCreationDto bookForCreationDto)
+        {
+            var book = Mapper.Map<Book>(bookForCreationDto);
+
+            book.AuthorId = authorid;
+
+            RepositoryWrapper.Book.Create(book);
+
+            if (!await RepositoryWrapper.Book.SaveAsync())
+            {
+                throw new Exception("创建资源Book失败");
+            }
+
+            var bookDto = Mapper.Map<BookDto>(book);
+
+            return CreatedAtRoute(nameof(GetBookAsync), new { authorId = authorid, bookid = bookDto.Id }, bookDto);
         }
     }
 }

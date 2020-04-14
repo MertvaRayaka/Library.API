@@ -18,7 +18,9 @@ namespace Library.API.Helpers
                 .ForMember(dest => dest.BirthPlace, config => config.MapFrom(src => "江苏·如东"))
                 .ForMember(dest => dest.Id, config => config.MapFrom(src => Guid.NewGuid()));
 
-            CreateMap<BookForCreationDto, Book>();
+            CreateMap<BookForCreationDto, Book>()
+                .ForMember(dest => dest.Page, config => config.MapFrom(src => src.Pages))
+                .ForMember(dest => dest.Id, config => config.MapFrom(src => Guid.NewGuid()));
 
             CreateMap<BookForUpdateDto, Book>();
         }

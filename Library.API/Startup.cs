@@ -1,5 +1,6 @@
 using AutoMapper;
 using Library.API.Entities;
+using Library.API.Filters;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -39,6 +40,8 @@ namespace Library.API
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
 
             services.AddAutoMapper(typeof(Library.API.Helpers.LibraryMappingProfile).Assembly);
+
+            services.AddScoped<CheckAuthorExistFilterAttribute>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

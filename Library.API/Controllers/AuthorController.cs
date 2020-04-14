@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 
 namespace Library.API.Controllers
@@ -81,17 +80,17 @@ namespace Library.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync()
         {
-            var authors = (await RepositoryWrapper.Author.GetAllAsync()).OrderBy(author=>author.Name);
+            var authors = (await RepositoryWrapper.Author.GetAllAsync()).OrderBy(author => author.Name);
 
             var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);//RepositoryBase类中的延迟方法（Task.FromResult(...)）会到运行到“使用AutoMapper进行对象映射”才实际去执行查询
 
             return authorDtoList.ToList();
         }
 
-        [HttpGet("{authorid}",Name =nameof(GetAuthorAsync))]
+        [HttpGet("{authorid}", Name = nameof(GetAuthorAsync))]
         public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId)
         {
-            var authors = await RepositoryWrapper.Author.GetByConditionAsync(p=>p.Id==authorId);
+            var authors = await RepositoryWrapper.Author.GetByConditionAsync(p => p.Id == authorId);
 
             var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);
 
@@ -114,7 +113,7 @@ namespace Library.API.Controllers
 
             var authorCreated = Mapper.Map<AuthorDto>(author);
 
-            return CreatedAtRoute(nameof(GetAuthorAsync),new { authorid = authorCreated.Id},authorCreated);
+            return CreatedAtRoute(nameof(GetAuthorAsync), new { authorid = authorCreated.Id }, authorCreated);
         }
 
         [HttpDelete("{authorid}")]

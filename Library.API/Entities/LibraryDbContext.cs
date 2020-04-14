@@ -29,7 +29,7 @@ namespace Library.API.Entities
 
     public static class ModelBuilderExtension
     {
-        public static async void SeedData(this ModelBuilder modelBuilder, IRepositoryWrapper repositoryWrapper, Guid authorid)
+        public static void SeedData(this ModelBuilder modelBuilder, IRepositoryWrapper repositoryWrapper, Guid authorid)
         {
             //modelBuilder.Entity<Author>().HasData(new Author
             //{
