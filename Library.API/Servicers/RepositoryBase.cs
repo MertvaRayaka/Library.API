@@ -19,7 +19,7 @@ namespace Library.API.Servicers
        
         public void Create(T entity)
         {
-            DbContext.Set<T>().Add(entity);
+           DbContext.Set<T>().Add(entity);
         }
 
         public void Delete(T entity)

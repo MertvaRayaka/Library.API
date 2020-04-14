@@ -21,9 +21,9 @@ namespace Library.API.Entities
 
         public int Page { get; set; }
 
-        //引用导航属性
-        [ForeignKey("{Authorid}")]//指明属性的外键
-        public Author Author { get; set; }
+        ////引用导航属性
+        //[ForeignKey("{Authorid}")]//指明属性的外键
+        //public Author Author { get; set; }
 
         public Guid AuthorId { get; set; }
     }
