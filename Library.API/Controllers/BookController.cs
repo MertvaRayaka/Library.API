@@ -3,6 +3,7 @@ using Library.API.Entities;
 using Library.API.Filters;
 using Library.API.Models;
 using Library.API.Servicers;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -212,7 +213,46 @@ namespace Library.API.Controllers
 
             var bookDto = Mapper.Map<BookDto>(book);
 
-            return CreatedAtRoute(nameof(GetBookAsync), new { authorId = authorid, bookid = bookDto.Id }, bookDto);
+            return CreatedAtRoute(nameof(GetBookAsync), new { AuthorId = authorid, BOOKID = bookDto.Id }, bookDto);
+        }
+
+        [HttpPut("{bookid}")]
+        public async Task<ActionResult> UpdateBookAsync([FromRoute]Guid authorid, [FromRoute]Guid bookid, BookForUpdateDto updatedBook)
+        {
+            var book = await RepositoryWrapper.Book.GetBookAsync(authorid, bookid);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            Mapper.Map(updatedBook, book, typeof(BookForUpdateDto), typeof(Book));
+            RepositoryWrapper.Book.Update(book);
+            if (!await RepositoryWrapper.Book.SaveAsync())
+            {
+                throw new Exception("更新资源Book失败");
+            }
+            return NoContent();
+        }
+
+        [HttpPatch("{bookid}")]
+        public async Task<ActionResult> PartiallyUpdateBookAsync(Guid authorid,Guid bookid, JsonPatchDocument<BookForUpdateDto> patchDocument)
+        {
+            var book = await RepositoryWrapper.Book.GetBookAsync(authorid, bookid);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            var bookUpdateDto = Mapper.Map<BookForUpdateDto>(book);
+            patchDocument.ApplyTo(bookUpdateDto, p =>
+             {
+                 Logger.LogInformation(p.ErrorMessage);
+             });
+            Mapper.Map(bookUpdateDto, book, typeof(BookForUpdateDto), typeof(Book));
+            RepositoryWrapper.Book.Update(book);
+            if (!await RepositoryWrapper.Book.SaveAsync())
+            {
+                throw new Exception("更新资源Book失败");
+            }
+            return NoContent();
         }
     }
 }

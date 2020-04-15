@@ -22,7 +22,8 @@ namespace Library.API.Helpers
                 .ForMember(dest => dest.Page, config => config.MapFrom(src => src.Pages))
                 .ForMember(dest => dest.Id, config => config.MapFrom(src => Guid.NewGuid()));
 
-            CreateMap<BookForUpdateDto, Book>();
+            CreateMap<BookForUpdateDto, Book>().ForMember(dest => dest.Page, config => config.MapFrom(src => src.Pages));
+            CreateMap<Book, BookForUpdateDto>().ForMember(dest => dest.Pages, config => config.MapFrom(src => src.Page));
         }
     }
 }
