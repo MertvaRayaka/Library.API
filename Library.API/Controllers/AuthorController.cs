@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Library.API.Entities;
+using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Mvc;
@@ -78,13 +79,21 @@ namespace Library.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync()
+        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync([FromQuery]AuthorResourceParameters parameters)
         {
-            var authors = (await RepositoryWrapper.Author.GetAllAsync()).OrderBy(author => author.Name);
+            var authors = await RepositoryWrapper.Author.GetAllAsync();
 
-            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);//RepositoryBase类中的延迟方法（Task.FromResult(...)）会到运行到“使用AutoMapper进行对象映射”才实际去执行查询
+            var PartAuthors = authors.Skip(parameters.PageSize * (parameters.PageNumber - 1)).Take(parameters.PageSize);
+
+            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(PartAuthors);
 
             return authorDtoList.ToList();
+            //未分页
+            //var authors = (await RepositoryWrapper.Author.GetAllAsync()).OrderBy(author => author.Name);
+
+            //var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);//RepositoryBase类中的延迟方法（Task.FromResult(...)）会到运行到“使用AutoMapper进行对象映射”才实际去执行查询
+
+            //return authorDtoList.ToList();
         }
 
         [HttpGet("{authorid}", Name = nameof(GetAuthorAsync))]
