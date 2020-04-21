@@ -242,10 +242,7 @@ namespace Library.API.Controllers
                 return NotFound();
             }
             var bookUpdateDto = Mapper.Map<BookForUpdateDto>(book);
-            patchDocument.ApplyTo(bookUpdateDto, p =>
-             {
-                 Logger.LogInformation(p.ErrorMessage);
-             });
+            patchDocument.ApplyTo(bookUpdateDto, p => { });
             Mapper.Map(bookUpdateDto, book, typeof(BookForUpdateDto), typeof(Book));
             RepositoryWrapper.Book.Update(book);
             if (!await RepositoryWrapper.Book.SaveAsync())
