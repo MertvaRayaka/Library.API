@@ -1,4 +1,5 @@
 ﻿using Library.API.Entities;
+using Library.API.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,5 +9,6 @@ namespace Library.API.Servicers
 {
     public interface IAuthorRepository2 : IRepositoryBase<Author>, IRepositoryBase2<Author, Guid>
     {
+        Task<PagedList<Author>> GetAllAsync(AuthorResourceParameters parameters);
     }
 }

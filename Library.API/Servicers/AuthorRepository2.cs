@@ -1,4 +1,5 @@
 ﻿using Library.API.Entities;
+using Library.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,12 @@ namespace Library.API.Servicers
         public AuthorRepository2(DbContext dbContext):base(dbContext)
         {
 
+        }
+
+        public Task<PagedList<Author>> GetAllAsync(AuthorResourceParameters parameters)
+        {
+            IQueryable<Author> querableAuthors = DbContext.Set<Author>();
+            return PagedList<Author>.CreateAsync(querableAuthors,parameters.PageNumber,parameters.PageSize);
         }
     }
 }

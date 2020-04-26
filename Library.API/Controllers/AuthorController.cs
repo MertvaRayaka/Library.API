@@ -4,6 +4,7 @@ using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,16 +79,41 @@ namespace Library.API.Controllers
             Mapper = mapper;
         }
 
-        [HttpGet]
+        [HttpGet(Name = nameof(GetAuthorsAsync))]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync([FromQuery]AuthorResourceParameters parameters)
         {
-            var authors = await RepositoryWrapper.Author.GetAllAsync();
-
-            var PartAuthors = authors.Skip(parameters.PageSize * (parameters.PageNumber - 1)).Take(parameters.PageSize);
-
-            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(PartAuthors);
-
+            //分页用PagedList<T>类来操作
+            var pagedList = await RepositoryWrapper.Author.GetAllAsync(parameters);
+            var pageinationMetadata = new
+            {
+                totalCount = pagedList.TotalCount,
+                pageSize = pagedList.PageSize,
+                currentPage = pagedList.CurrentPage,
+                totalPages = pagedList.TotalPages,
+                previousPageLink = pagedList.HasPrevious ? Url.Link(nameof(GetAuthorsAsync), new
+                {
+                    pageNumber = pagedList.CurrentPage - 1,
+                    pageSize = pagedList.PageSize
+                }) : null,
+                nextPageLink = pagedList.HasNext ? Url.Link(nameof(GetAuthorsAsync), new
+                {
+                    pageNumber = pagedList.CurrentPage + 1,
+                    pageSize = pagedList.PageSize
+                }) : null,
+            };
+            Response.Headers.Add("X-Pagination",JsonConvert.SerializeObject(pageinationMetadata));
+            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(pagedList);
             return authorDtoList.ToList();
+
+
+            //分页写在Controller中
+            //var authors = await RepositoryWrapper.Author.GetAllAsync();
+
+            //var PartAuthors = authors.Skip(parameters.PageSize * (parameters.PageNumber - 1)).Take(parameters.PageSize);
+
+            //var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(PartAuthors);
+
+            //return authorDtoList.ToList();
             //未分页
             //var authors = (await RepositoryWrapper.Author.GetAllAsync()).OrderBy(author => author.Name);
 
