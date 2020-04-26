@@ -93,12 +93,16 @@ namespace Library.API.Controllers
                 previousPageLink = pagedList.HasPrevious ? Url.Link(nameof(GetAuthorsAsync), new
                 {
                     pageNumber = pagedList.CurrentPage - 1,
-                    pageSize = pagedList.PageSize
+                    pageSize = pagedList.PageSize,
+                    birthPlace = parameters.BirthPlace,
+                    searchQuery = parameters.SearchQuery
                 }) : null,
                 nextPageLink = pagedList.HasNext ? Url.Link(nameof(GetAuthorsAsync), new
                 {
                     pageNumber = pagedList.CurrentPage + 1,
-                    pageSize = pagedList.PageSize
+                    pageSize = pagedList.PageSize,
+                    birthPlace = parameters.BirthPlace,
+                    searchQuery = parameters.SearchQuery
                 }) : null,
             };
             Response.Headers.Add("X-Pagination",JsonConvert.SerializeObject(pageinationMetadata));

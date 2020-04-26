@@ -10,6 +10,8 @@ namespace Library.API.Helpers
         public const int MaxPageSize = 50;
         private int pageSize = 10;
         public int PageNumber { get; set; } = 1;
+        public string BirthPlace { get; set; }
+        public string SearchQuery { get; set; }
 
         public int PageSize
         {

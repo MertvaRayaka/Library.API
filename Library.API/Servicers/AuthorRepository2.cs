@@ -18,6 +18,14 @@ namespace Library.API.Servicers
         public Task<PagedList<Author>> GetAllAsync(AuthorResourceParameters parameters)
         {
             IQueryable<Author> querableAuthors = DbContext.Set<Author>();
+            if (!string.IsNullOrWhiteSpace(parameters.BirthPlace))
+            {
+                querableAuthors = querableAuthors.Where(p => p.BirthPlace == parameters.BirthPlace);
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.SearchQuery))
+            {
+                querableAuthors = querableAuthors.Where(p => p.BirthPlace.ToLower().Contains(parameters.SearchQuery.ToLower())|| p.Name.ToLower().Contains(parameters.SearchQuery.ToLower()));
+            }
             return PagedList<Author>.CreateAsync(querableAuthors,parameters.PageNumber,parameters.PageSize);
         }
     }
