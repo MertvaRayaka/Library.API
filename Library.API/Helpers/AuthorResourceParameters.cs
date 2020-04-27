@@ -12,6 +12,7 @@ namespace Library.API.Helpers
         public int PageNumber { get; set; } = 1;
         public string BirthPlace { get; set; }
         public string SearchQuery { get; set; }
+        public string SortBy { get; set; } = "Name";
 
         public int PageSize
         {
