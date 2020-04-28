@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Controller;
+using NLog.Extensions.Logging;
 
 namespace Library.API
 {
@@ -26,6 +29,8 @@ namespace Library.API
         {
             services.AddControllers(config =>
             {
+                config.Filters.Add<JsonExceptionFilter>();
+
                 config.ReturnHttpNotAcceptable = true;//只有返回Accept指定类型客户端才能正确接收，否则返回406 Not Accept
                 //config.OutputFormatters.Add(new XmlSerializerOutputFormatter());//将能够输出XML的Formatter添加到Formatter集合中
             })
