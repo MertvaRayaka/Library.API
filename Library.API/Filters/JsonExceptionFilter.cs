@@ -39,6 +39,7 @@ namespace Library.API.Filters
                 error.Detail = context.Exception.Message;
             }
 
+            //对象初始化器
             context.Result = new ObjectResult(error)
             {
                 StatusCode = StatusCodes.Status500InternalServerError
