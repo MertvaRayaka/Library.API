@@ -4,12 +4,15 @@ using Library.API.Filters;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.CodeAnalysis.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Controller;
 using NLog.Extensions.Logging;
 
@@ -24,7 +27,6 @@ namespace Library.API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(config =>
@@ -33,6 +35,12 @@ namespace Library.API
 
                 config.ReturnHttpNotAcceptable = true;//只有返回Accept指定类型客户端才能正确接收，否则返回406 Not Accept
                 //config.OutputFormatters.Add(new XmlSerializerOutputFormatter());//将能够输出XML的Formatter添加到Formatter集合中
+
+                config.CacheProfiles.Add("60", new CacheProfile()
+                {
+                    Duration = 60,
+                    Location = ResponseCacheLocation.Client,
+                }); 
             })
             .AddNewtonsoftJson();
             //services.AddScoped<IAuthorRepository, AuthorMockRepository>();
@@ -47,15 +55,22 @@ namespace Library.API
             services.AddAutoMapper(typeof(Library.API.Helpers.LibraryMappingProfile).Assembly);
 
             services.AddScoped<CheckAuthorExistFilterAttribute>();
+
+            services.AddResponseCaching(options=>
+            {
+                options.UseCaseSensitivePaths = true;
+                options.MaximumBodySize = 1024;
+            });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseResponseCaching();
 
             app.UseHttpsRedirection();
 

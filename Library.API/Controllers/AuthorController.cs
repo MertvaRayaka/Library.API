@@ -3,12 +3,18 @@ using Library.API.Entities;
 using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Servicers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Library.API.Controllers
@@ -133,13 +139,40 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("{authorid}", Name = nameof(GetAuthorAsync))]
+        [ResponseCache(CacheProfileName ="60")]
         public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId)
         {
-            var authors = await RepositoryWrapper.Author.GetByConditionAsync(p => p.Id == authorId);
+            var author = await RepositoryWrapper.Author.GetByIdAsync(authorId);
 
-            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);
+            if (author == null)
+            {
+                return NotFound();
+            }
+            var entityHash = GetHash(author);
+            Response.Headers[HeaderNames.ETag] = entityHash;
+            if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var requestETag) && entityHash == requestETag)
+            {
+                return StatusCode(StatusCodes.Status304NotModified);
+            }
 
-            return authorDtoList.FirstOrDefault();
+            var authorDto = Mapper.Map<AuthorDto>(author);
+
+            return authorDto;
+
+            string GetHash(object entity)
+            {
+                string result = string.Empty;
+                var json = JsonConvert.SerializeObject(entity);
+                var bytes = Encoding.UTF8.GetBytes(json);
+
+                using (var hasher = MD5.Create())
+                {
+                    var hash = hasher.ComputeHash(bytes);
+                    result = BitConverter.ToString(hash);
+                    result = result.Replace("-","");
+                }
+                return result;
+            }
         }
 
         [HttpPost]
