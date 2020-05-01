@@ -5,15 +5,14 @@ using Library.API.Models;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -79,13 +78,15 @@ namespace Library.API.Controllers
 
         public IRepositoryWrapper RepositoryWrapper { get; }
         public IMapper Mapper { get; }
-        public ILogger<AuthorController> Logger { get;}
+        public ILogger<AuthorController> Logger { get; }
+        public IDistributedCache DistributedCache { get; }
 
-        public AuthorController(IRepositoryWrapper repositoryWrapper, IMapper mapper,ILogger<AuthorController> logger)
+        public AuthorController(IRepositoryWrapper repositoryWrapper, IMapper mapper, ILogger<AuthorController> logger, IDistributedCache distributedCache)
         {
             RepositoryWrapper = repositoryWrapper;
             Mapper = mapper;
             Logger = logger;
+            DistributedCache = distributedCache;
         }
 
         [HttpGet(Name = nameof(GetAuthorsAsync))]
@@ -117,7 +118,7 @@ namespace Library.API.Controllers
                     sortBy = parameters.SortBy,
                 }) : null,
             };
-            Response.Headers.Add("X-Pagination",JsonConvert.SerializeObject(pageinationMetadata));
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pageinationMetadata));
             var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(pagedList);
             return authorDtoList.ToList();
 
@@ -139,7 +140,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("{authorid}", Name = nameof(GetAuthorAsync))]
-        [ResponseCache(CacheProfileName ="60")]
+        [ResponseCache(CacheProfileName = "60")]
         public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId)
         {
             var author = await RepositoryWrapper.Author.GetByIdAsync(authorId);
@@ -169,7 +170,7 @@ namespace Library.API.Controllers
                 {
                     var hash = hasher.ComputeHash(bytes);
                     result = BitConverter.ToString(hash);
-                    result = result.Replace("-","");
+                    result = result.Replace("-", "");
                 }
                 return result;
             }

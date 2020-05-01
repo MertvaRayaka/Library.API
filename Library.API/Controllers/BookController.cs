@@ -5,6 +5,7 @@ using Library.API.Models;
 using Library.API.Servicers;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -154,35 +155,30 @@ namespace Library.API.Controllers
         public ILogger<BookController> Logger { get; }
         public IRepositoryWrapper RepositoryWrapper { get; }
         public IMapper Mapper { get; }
+        public IMemoryCache MemoryCache { get; }
 
-        public BookController(IRepositoryWrapper repositoryWrapper, IMapper mapper, ILogger<BookController> logger)
+        public BookController(IRepositoryWrapper repositoryWrapper, IMapper mapper, ILogger<BookController> logger, IMemoryCache memoryCache)
         {
             RepositoryWrapper = repositoryWrapper;
             Mapper = mapper;
             Logger = logger;
+            MemoryCache = memoryCache;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetSpecifyAuthorBooks(Guid authorid)
         {
-            var books = await RepositoryWrapper.Book.GetBooksAsync(authorid);
-
-            if (books.Count() == 1)
+            List<BookDto> bookDtoList = new List<BookDto>();
+            string key = $"{authorid}_books";
+            if (!MemoryCache.TryGetValue(key, out bookDtoList))
             {
-                RepositoryWrapper.Book.Create(new Book
-                {
-                    AuthorId = authorid,
-                    Description = "超好看的书",
-                    Id = Guid.NewGuid(),
-                    Page = 999,
-                    Title = "文章の标题"
-                });
-
-                await RepositoryWrapper.Book.SaveAsync();
+                var books = await RepositoryWrapper.Book.GetBooksAsync(authorid);
+                bookDtoList = Mapper.Map<List<BookDto>>(books);
+                MemoryCacheEntryOptions options = new MemoryCacheEntryOptions();
+                options.AbsoluteExpiration = DateTime.Now.AddMinutes(10);
+                options.Priority = CacheItemPriority.Normal;
+                MemoryCache.Set(key, bookDtoList,options);
             }
-
-            var bookDtoList = Mapper.Map<IEnumerable<BookDto>>(books);
-
             return bookDtoList.ToList();
         }
 
@@ -235,7 +231,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPatch("{bookid}")]
-        public async Task<ActionResult> PartiallyUpdateBookAsync(Guid authorid,Guid bookid, JsonPatchDocument<BookForUpdateDto> patchDocument)
+        public async Task<ActionResult> PartiallyUpdateBookAsync(Guid authorid, Guid bookid, JsonPatchDocument<BookForUpdateDto> patchDocument)
         {
             var book = await RepositoryWrapper.Book.GetBookAsync(authorid, bookid);
             if (book == null)

@@ -40,7 +40,7 @@ namespace Library.API
                 {
                     Duration = 60,
                     Location = ResponseCacheLocation.Client,
-                }); 
+                });
             })
             .AddNewtonsoftJson();
             //services.AddScoped<IAuthorRepository, AuthorMockRepository>();
@@ -56,10 +56,18 @@ namespace Library.API
 
             services.AddScoped<CheckAuthorExistFilterAttribute>();
 
-            services.AddResponseCaching(options=>
+            services.AddResponseCaching(options =>
             {
                 options.UseCaseSensitivePaths = true;
                 options.MaximumBodySize = 1024;
+            });
+
+            services.AddMemoryCache();
+
+            services.AddDistributedRedisCache(options => 
+            {
+                options.Configuration = Configuration["Caching:Host"];
+                options.InstanceName = Configuration["Caching:Instanse"];
             });
         }
 
