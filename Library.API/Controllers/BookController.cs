@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
 using Library.API.Entities;
 using Library.API.Filters;
+using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Servicers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -214,6 +217,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{bookid}")]
+        [CheckIfMatchHeaderFilter]
         public async Task<ActionResult> UpdateBookAsync([FromRoute]Guid authorid, [FromRoute]Guid bookid, BookForUpdateDto updatedBook)
         {
             var book = await RepositoryWrapper.Book.GetBookAsync(authorid, bookid);
@@ -221,12 +225,25 @@ namespace Library.API.Controllers
             {
                 return NotFound();
             }
+
+            //若不一致 则说明此资源已被修改
+            var entityHash = HashFactory.GetHash(book);
+            if (Request.Headers.TryGetValue(HeaderNames.IfMatch,out var requestETag)&&requestETag!=entityHash)
+            {
+                return StatusCode(StatusCodes.Status412PreconditionFailed);
+            }
+
             Mapper.Map(updatedBook, book, typeof(BookForUpdateDto), typeof(Book));
             RepositoryWrapper.Book.Update(book);
             if (!await RepositoryWrapper.Book.SaveAsync())
             {
                 throw new Exception("更新资源Book失败");
             }
+
+            //服务器接收此次修改，并返回新的ETag
+            var entityNewHash = HashFactory.GetHash(book);
+            Response.Headers[HeaderNames.ETag] = entityNewHash;
+
             return NoContent();
         }
 

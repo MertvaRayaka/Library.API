@@ -186,7 +186,7 @@ namespace Library.API.Controllers
             {
                 return NotFound();
             }
-            var entityHash = GetHash(author);
+            var entityHash = HashFactory.GetHash(author);
             Response.Headers[HeaderNames.ETag] = entityHash;
             if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var requestETag) && entityHash == requestETag)
             {
@@ -195,22 +195,7 @@ namespace Library.API.Controllers
 
             var authorDto = Mapper.Map<AuthorDto>(author);
 
-            return authorDto;
-
-            string GetHash(object entity)
-            {
-                string result = string.Empty;
-                var json = JsonConvert.SerializeObject(entity);
-                var bytes = Encoding.UTF8.GetBytes(json);
-
-                using (var hasher = MD5.Create())
-                {
-                    var hash = hasher.ComputeHash(bytes);
-                    result = BitConverter.ToString(hash);
-                    result = result.Replace("-", "");
-                }
-                return result;
-            }
+            return authorDto;      
         }
 
         [HttpPost]
