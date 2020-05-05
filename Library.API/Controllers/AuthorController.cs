@@ -92,33 +92,70 @@ namespace Library.API.Controllers
         [HttpGet(Name = nameof(GetAuthorsAsync))]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync([FromQuery]AuthorResourceParameters parameters)
         {
-            //分页用PagedList<T>类来操作
-            var pagedList = await RepositoryWrapper.Author.GetAllAsync(parameters);
-            Logger.LogInformation($"{DateTime.Now}执行一次Authors的查询");
-            var pageinationMetadata = new
+            PagedList<Author> pagedList = null;
+
+            //为了简单，仅当请求中不包含过滤和搜索搜索查询字符串时才进行缓存，实际情况不应该设置此限制
+            if (string.IsNullOrWhiteSpace(parameters.BirthPlace) && string.IsNullOrWhiteSpace(parameters.SearchQuery))
             {
-                totalCount = pagedList.TotalCount,
-                pageSize = pagedList.PageSize,
-                currentPage = pagedList.CurrentPage,
-                totalPages = pagedList.TotalPages,
-                previousPageLink = pagedList.HasPrevious ? Url.Link(nameof(GetAuthorsAsync), new
+                //缓存键
+                string cacheKey = $"author_page_{parameters.PageNumber}_pagesize_{parameters.PageSize}_{parameters.SortBy}";
+                //键的内容
+                string cachedContent = await DistributedCache.GetStringAsync(cacheKey);
+
+                JsonSerializerSettings settings = new JsonSerializerSettings();
+                settings.Converters.Add(new PagedListConverter<Author>());
+                settings.Formatting = Formatting.Indented;
+
+                if (string.IsNullOrWhiteSpace(cachedContent))
                 {
-                    pageNumber = pagedList.CurrentPage - 1,
-                    pageSize = pagedList.PageSize,
-                    birthPlace = parameters.BirthPlace,
-                    searchQuery = parameters.SearchQuery,
-                    sortBy = parameters.SortBy,
-                }) : null,
-                nextPageLink = pagedList.HasNext ? Url.Link(nameof(GetAuthorsAsync), new
+                    pagedList = await RepositoryWrapper.Author.GetAllAsync(parameters);
+                    DistributedCacheEntryOptions options = new DistributedCacheEntryOptions
+                    {
+                        SlidingExpiration = TimeSpan.FromMinutes(2),
+                    };
+
+                    var serilizedContent = JsonConvert.SerializeObject(pagedList, settings);
+                    await DistributedCache.SetStringAsync(cacheKey, serilizedContent);
+                }
+                else
                 {
-                    pageNumber = pagedList.CurrentPage + 1,
+                    pagedList = JsonConvert.DeserializeObject<PagedList<Author>>(cachedContent, settings);
+                    Logger.LogInformation($"用Redis执行一次GetAuthors查询");
+                }
+            }
+
+            else
+            {
+                //分页用PagedList<T>类来操作
+                pagedList = await RepositoryWrapper.Author.GetAllAsync(parameters);
+                Logger.LogInformation($"不用Redis执行一次GetAuthors查询");
+                var pageinationMetadata = new
+                {
+                    totalCount = pagedList.TotalCount,
                     pageSize = pagedList.PageSize,
-                    birthPlace = parameters.BirthPlace,
-                    searchQuery = parameters.SearchQuery,
-                    sortBy = parameters.SortBy,
-                }) : null,
-            };
-            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pageinationMetadata));
+                    currentPage = pagedList.CurrentPage,
+                    totalPages = pagedList.TotalPages,
+                    previousPageLink = pagedList.HasPrevious ? Url.Link(nameof(GetAuthorsAsync), new
+                    {
+                        pageNumber = pagedList.CurrentPage - 1,
+                        pageSize = pagedList.PageSize,
+                        birthPlace = parameters.BirthPlace,
+                        searchQuery = parameters.SearchQuery,
+                        sortBy = parameters.SortBy,
+                    }) : null,
+                    nextPageLink = pagedList.HasNext ? Url.Link(nameof(GetAuthorsAsync), new
+                    {
+                        pageNumber = pagedList.CurrentPage + 1,
+                        pageSize = pagedList.PageSize,
+                        birthPlace = parameters.BirthPlace,
+                        searchQuery = parameters.SearchQuery,
+                        sortBy = parameters.SortBy,
+                    }) : null,
+                };
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(pageinationMetadata));
+            }
+            
             var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(pagedList);
             return authorDtoList.ToList();
 
