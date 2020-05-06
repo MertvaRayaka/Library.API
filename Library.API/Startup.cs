@@ -5,16 +5,11 @@ using Library.API.Servicers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.CodeAnalysis.Options;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Controller;
-using NLog.Extensions.Logging;
 
 namespace Library.API
 {
@@ -64,11 +59,26 @@ namespace Library.API
 
             services.AddMemoryCache();
 
-            services.AddDistributedRedisCache(options => 
+            services.AddDistributedRedisCache(options =>
             {
                 options.Configuration = Configuration["Caching:Host"];
                 options.InstanceName = Configuration["Caching:Instanse"];
             });
+
+            services.AddApiVersioning(options =>
+            {
+                options.ReportApiVersions = true;
+                //当客户端未提供版本时是否使用默认版本
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                //在requestHeader中为属性api-version赋值，并且可以在URL中使用查询语句
+                options.ApiVersionReader = ApiVersionReader.Combine
+                (
+                    new QueryStringApiVersionReader("api-version"),
+                    new HeaderApiVersionReader("api-version")
+                );
+            });
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
